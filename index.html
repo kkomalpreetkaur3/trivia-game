@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trivia Game</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="game-container">
+      <form id="trivia-form" novalidate>
+        <!-- Loading State / Skeleton Loader -->
+        <div id="loading-container" class="hidden" aria-hidden="true">
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+          <div class="skeleton skeleton-option"></div>
+        </div>
+
+        <div id="question-container" class="hidden" aria-live="polite"></div>
+
+        <div id="player-controls">
+          <label for="username" class="sr-only">Enter your display name</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Enter your name"
+            autocomplete="name"
+          />
+          <span id="usernameError" class="error-message" aria-live="polite"></span>
+          <button type="submit" id="submit-game">Finish Game</button>
+        </div>
+      </form>
+
+      <button id="new-player" class="hidden" aria-hidden="true">New Player</button>
+
+      <table id="score-table" aria-live="polite">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Score</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Scores will be inserted here -->
+        </tbody>
+      </table>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
