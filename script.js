@@ -52,3 +52,39 @@ function fetchQuestions() {
 document.addEventListener("DOMContentLoaded", () => {
   fetchQuestions();
 });
+
+// --- Cookie helpers ---
+function setCookie(name, value, days) {
+  const expires = days ? "; expires=" + new Date(Date.now() + days * 864e5).toUTCString() : "";
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value || "")}${expires}; path=/`;
+}
+
+function getCookie(name) {
+  const cookies = document.cookie.split('; ').map(c => c.split('='));
+  for (const [k, v] of cookies) {
+    if (decodeURIComponent(k) === name) return decodeURIComponent(v || '');
+  }
+  return undefined;
+}
+
+function deleteCookie(name) {
+  document.cookie = `${encodeURIComponent(name)}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+}
+
+// UI helpers
+function checkUsername() {
+  const usernameInput = document.getElementById('username');
+  const newPlayerBtn = document.getElementById('new-player');
+  const stored = getCookie('trivia_username');
+  if (stored) {
+    usernameInput.classList.add('hidden');
+    usernameInput.setAttribute('aria-hidden', 'true');
+    newPlayerBtn.classList.remove('hidden');
+    newPlayerBtn.removeAttribute('aria-hidden');
+  } else {
+    usernameInput.classList.remove('hidden');
+    usernameInput.removeAttribute('aria-hidden');
+    newPlayerBtn.classList.add('hidden');
+    newPlayerBtn.setAttribute('aria-hidden', 'true');
+  }
+}
