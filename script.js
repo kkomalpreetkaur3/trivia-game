@@ -139,3 +139,39 @@ function saveScore(name, score) {
   scores.push(entry);
   saveScores(scores);
 }
+
+function clearErrors() {
+  const errorMessages = document.querySelectorAll('.error-message');
+  errorMessages.forEach(e => { e.textContent = ''; e.classList.remove('error-visible'); });
+}
+
+function showError(fieldName, message) {
+  const errorFieldId = `${fieldName}Error`;
+  const errorField = document.getElementById(errorFieldId);
+  if (!errorField) return;
+  errorField.textContent = message;
+  errorField.classList.add('error-visible');
+}
+
+function handleFormSubmit(event) {
+  event.preventDefault();
+  clearErrors();
+  const usernameInput = document.getElementById('username');
+  let username = getCookie('trivia_username');
+
+  if (!username) {
+    const nameVal = (usernameInput.value || '').trim();
+    if (!nameVal) {
+      showError('username', 'Please enter your name');
+      return;
+    }
+    username = nameVal;
+    setCookie('trivia_username', username, 30);
+    checkUsername();
+  }
+
+  const score = calculateScore();
+  saveScore(username, score);
+  displayScores();
+  fetchQuestions();
+}
