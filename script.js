@@ -120,3 +120,22 @@ function displayScores() {
     tbody.appendChild(tr);
   });
 }
+
+function calculateScore() {
+  const questionContainer = document.getElementById('question-container');
+  const questionDivs = Array.from(questionContainer.children);
+  let correct = 0;
+  questionDivs.forEach((qDiv, idx) => {
+    const selector = `input[name="answer${idx}"]:checked`;
+    const selected = qDiv.querySelector(selector);
+    if (selected && selected.dataset && selected.dataset.correct === 'true') correct++;
+  });
+  return correct;
+}
+
+function saveScore(name, score) {
+  const scores = loadScores();
+  const entry = { name, score, date: new Date().toLocaleString() };
+  scores.push(entry);
+  saveScores(scores);
+}
