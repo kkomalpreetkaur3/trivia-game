@@ -88,3 +88,35 @@ function checkUsername() {
     newPlayerBtn.setAttribute('aria-hidden', 'true');
   }
 }
+
+function loadScores() {
+  try {
+    const raw = localStorage.getItem('trivia_scores');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { console.error('Error parsing scores from localStorage', e); return []; }
+}
+
+function saveScores(scores) {
+  localStorage.setItem('trivia_scores', JSON.stringify(scores));
+}
+
+function displayScores() {
+  const tbody = document.querySelector('#score-table tbody');
+  tbody.innerHTML = '';
+  const scores = loadScores();
+  if (scores.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="3">No scores yet</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+  scores.sort((a,b) => b.score - a.score);
+  scores.forEach(({name, score, date}) => {
+    const tr = document.createElement('tr');
+    const nameTd = document.createElement('td'); nameTd.textContent = name;
+    const scoreTd = document.createElement('td'); scoreTd.textContent = String(score);
+    const dateTd = document.createElement('td'); dateTd.textContent = date;
+    tr.append(nameTd, scoreTd, dateTd);
+    tbody.appendChild(tr);
+  });
+}
