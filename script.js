@@ -1,212 +1,217 @@
-// Initial fetch skeleton
-function showLoading(isLoading) {
-  document.getElementById("loading-container").classList = isLoading ? "" : "hidden";
-  document.getElementById("question-container").classList = isLoading ? "hidden" : "";
-}
+ /*
+ Initializes the Trivia Game when the DOM is fully loaded.
+ */
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("trivia-form");
+    const questionContainer = document.getElementById("question-container");
+    const newPlayerButton = document.getElementById("new-player");
+    const usernameInput = document.getElementById("username");
 
-function createQuestionElement(questionObj, index) {
-  const wrapper = document.createElement('div');
-  const p = document.createElement('p');
-  p.textContent = questionObj.question;
-  wrapper.appendChild(p);
+    // Initialize the game
+    checkUsername(); 
+    fetchQuestions();
+    displayScores();
 
-  const answers = [questionObj.correct_answer, ...questionObj.incorrect_answers]
-    .map(a => ({ text: a }))
-    .sort(() => Math.random() - 0.5);
+    /*
+COOKIE MANAGEMENT    
+*/
 
-  answers.forEach(ans => {
-    const label = document.createElement('label');
-    const input = document.createElement('input');
-    input.type = 'radio';
-    input.name = `answer${index}`;
-    input.value = ans.text;
-    if (ans.text === questionObj.correct_answer) input.dataset.correct = 'true';
-    label.appendChild(input);
-    label.append(document.createTextNode(ans.text));
-    wrapper.appendChild(label);
-  });
-
-  return wrapper;
-}
-
-function fetchQuestions() {
-  showLoading(true);
-  fetch('https://opentdb.com/api.php?amount=10&type=multiple')
-    .then(r => r.json())
-    .then(data => {
-      const questions = data.results || [];
-      const container = document.getElementById('question-container');
-      container.innerHTML = '';
-      questions.forEach((q, i) => {
-        const qEl = createQuestionElement(q, i);
-        container.appendChild(qEl);
-      });
-      showLoading(false);
-    })
-    .catch(err => {
-      console.error('Error fetching questions:', err);
-      showLoading(false);
-    });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  fetchQuestions();
-});
-
-// --- Cookie helpers ---
-function setCookie(name, value, days) {
-  const expires = days ? "; expires=" + new Date(Date.now() + days * 864e5).toUTCString() : "";
-  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value || "")}${expires}; path=/`;
-}
-
-function getCookie(name) {
-  const cookies = document.cookie.split('; ').map(c => c.split('='));
-  for (const [k, v] of cookies) {
-    if (decodeURIComponent(k) === name) return decodeURIComponent(v || '');
-  }
-  return undefined;
-}
-
-function deleteCookie(name) {
-  document.cookie = `${encodeURIComponent(name)}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
-}
-
-// UI helpers
-function checkUsername() {
-  const usernameInput = document.getElementById('username');
-  const newPlayerBtn = document.getElementById('new-player');
-  const stored = getCookie('trivia_username');
-  if (stored) {
-    usernameInput.classList.add('hidden');
-    usernameInput.setAttribute('aria-hidden', 'true');
-    newPlayerBtn.classList.remove('hidden');
-    newPlayerBtn.removeAttribute('aria-hidden');
-  } else {
-    usernameInput.classList.remove('hidden');
-    usernameInput.removeAttribute('aria-hidden');
-    newPlayerBtn.classList.add('hidden');
-    newPlayerBtn.setAttribute('aria-hidden', 'true');
-  }
-}
-
-function loadScores() {
-  try {
-    const raw = localStorage.getItem('trivia_scores');
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) { console.error('Error parsing scores from localStorage', e); return []; }
-}
-
-function saveScores(scores) {
-  localStorage.setItem('trivia_scores', JSON.stringify(scores));
-}
-
-function displayScores() {
-  const tbody = document.querySelector('#score-table tbody');
-  tbody.innerHTML = '';
-  const scores = loadScores();
-  if (scores.length === 0) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="3">No scores yet</td>';
-    tbody.appendChild(tr);
-    return;
-  }
-  scores.sort((a,b) => b.score - a.score);
-  scores.forEach(({name, score, date}) => {
-    const tr = document.createElement('tr');
-    const nameTd = document.createElement('td'); nameTd.textContent = name;
-    const scoreTd = document.createElement('td'); scoreTd.textContent = String(score);
-    const dateTd = document.createElement('td'); dateTd.textContent = date;
-    tr.append(nameTd, scoreTd, dateTd);
-    tbody.appendChild(tr);
-  });
-}
-
-function calculateScore() {
-  const questionContainer = document.getElementById('question-container');
-  const questionDivs = Array.from(questionContainer.children);
-  let correct = 0;
-  questionDivs.forEach((qDiv, idx) => {
-    const selector = `input[name="answer${idx}"]:checked`;
-    const selected = qDiv.querySelector(selector);
-    if (selected && selected.dataset && selected.dataset.correct === 'true') correct++;
-  });
-  return correct;
-}
-
-function saveScore(name, score) {
-  const scores = loadScores();
-  const entry = { name, score, date: new Date().toLocaleString() };
-  scores.push(entry);
-  saveScores(scores);
-}
-
-function clearErrors() {
-  const errorMessages = document.querySelectorAll('.error-message');
-  errorMessages.forEach(e => { e.textContent = ''; e.classList.remove('error-visible'); });
-}
-
-function showError(fieldName, message) {
-  const errorFieldId = `${fieldName}Error`;
-  const errorField = document.getElementById(errorFieldId);
-  if (!errorField) return;
-  errorField.textContent = message;
-  errorField.classList.add('error-visible');
-}
-
-function handleFormSubmit(event) {
-  event.preventDefault();
-  clearErrors();
-  const usernameInput = document.getElementById('username');
-  let username = getCookie('trivia_username');
-
-  if (!username) {
-    const nameVal = (usernameInput.value || '').trim();
-    if (!nameVal) {
-      showError('username', 'Please enter your name');
-      return;
+    function setCookie(name, value, days = 7) {
+        const date = new Date();
+        date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+        document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/`;
     }
-    username = nameVal;
-    setCookie('trivia_username', username, 30);
-    checkUsername();
-  }
 
-  const score = calculateScore();
-  saveScore(username, score);
-  displayScores();
-  fetchQuestions();
-}
+    function getCookie(name) {
+        return document.cookie
+            .split("; ")
+            .find((row) => row.startsWith(name + "="))
+            ?.split("=")[1];
+    }
 
-function newPlayer() {
-  deleteCookie('trivia_username');
-  sessionStorage.removeItem('currentAnswers');
-  document.getElementById('username').value = '';
-  document.getElementById('username').classList.remove('hidden');
-  document.getElementById('username').removeAttribute('aria-hidden');
-  document.getElementById('new-player').classList.add('hidden');
-  document.getElementById('new-player').setAttribute('aria-hidden','true');
-  checkUsername();
-}
+    function deleteCookie(name) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+    }
 
-document.addEventListener('DOMContentLoaded', function () {
-  const form = document.getElementById('trivia-form');
-  const newPlayerButton = document.getElementById('new-player');
-  form.addEventListener('submit', handleFormSubmit);
-  newPlayerButton.addEventListener('click', newPlayer);
+/* 
+User Session Check
+*/
+    function checkUsername() {
+        const savedUsername = getCookie("username");
 
-  checkUsername();
-  fetchQuestions();
-  displayScores();
+        if (savedUsername) {
+            usernameInput.classList.add("hidden");
+            newPlayerButton.classList.remove("hidden");
+            usernameInput.value = savedUsername;
+        } else {
+            usernameInput.classList.remove("hidden");
+            newPlayerButton.classList.add("hidden");
+        }
+    }
+
+/*
+FETCH QUESTIONS FROM API
+*/
+    function fetchQuestions() {
+        showLoading(true);
+
+        fetch("https://opentdb.com/api.php?amount=10&type=multiple")
+            .then((response) => response.json())
+            .then((data) => {
+                // store correct answers in sessionStorage (privacy-safe)
+                const correctAnswers = data.results.map(q => q.correct_answer);
+                sessionStorage.setItem("correctAnswers", JSON.stringify(correctAnswers));
+
+                displayQuestions(data.results);
+                showLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching questions:", error);
+                showLoading(false);
+            });
+    }
+
+/* 
+Show/Hide Loading
+*/
+    function showLoading(isLoading) {
+        document.getElementById("loading-container").classList =
+            isLoading ? "" : "hidden";
+        document.getElementById("question-container").classList =
+            isLoading ? "hidden" : "";
+    }
+
+/*
+Display Questions
+*/  
+    function displayQuestions(questions) {
+        questionContainer.innerHTML = "";
+        questions.forEach((question, index) => {
+            const questionDiv = document.createElement("div");
+            questionDiv.innerHTML = `
+                <p>${question.question}</p>
+                ${createAnswerOptions(
+                    question.correct_answer,
+                    question.incorrect_answers,
+                    index
+                )}
+            `;
+            questionContainer.appendChild(questionDiv);
+        });
+    }
+
+    function createAnswerOptions(correctAnswer, incorrectAnswers, index) {
+        const allAnswers = [correctAnswer, ...incorrectAnswers].sort(
+            () => Math.random() - 0.5
+        );
+
+        return allAnswers
+            .map(
+                (answer) => `
+            <label>
+                <input type="radio" name="answer${index}" value="${answer}">
+                ${answer}
+            </label>
+        `
+            )
+            .join("");
+    }
+
+/*
+FORM SUBMISSION HANDLER
+*/
+
+    form.addEventListener("submit", handleFormSubmit);
+
+    function handleFormSubmit(event) {
+        event.preventDefault();
+
+        let username = usernameInput.value.trim();
+
+        // If user has a cookie, use it
+        if (getCookie("username")) {
+            username = getCookie("username");
+        }
+
+        // If no username provided
+        if (!username) {
+            alert("Please enter your name.");
+            return;
+        }
+
+        // Save username in cookie if new
+        if (!getCookie("username")) {
+            setCookie("username", username, 7);
+        }
+
+        const score = calculateScore();
+        saveScore(username, score);
+        displayScores();
+
+        // Reset game for next round
+        fetchQuestions();
+    }
+
+/*
+SCORE CALCULATION
+*/
+    function calculateScore() {
+        let score = 0;
+
+        const correctAnswers = JSON.parse(
+            sessionStorage.getItem("correctAnswers")
+        );
+
+        correctAnswers.forEach((correct, index) => {
+            const selected = document.querySelector(
+                `input[name="answer${index}"]:checked`
+            );
+            if (selected && selected.value === correct) {
+                score++;
+            }
+        });
+
+        return score;
+    }
+/*
+SCORE STORAGE AND DISPLAY
+*/
+    function saveScore(username, score) {
+        let scores = JSON.parse(localStorage.getItem("scores")) || [];
+
+        scores.push({
+            username: username,
+            score: score,
+        });
+
+        localStorage.setItem("scores", JSON.stringify(scores));
+    }
+
+    function displayScores() {
+        const scores = JSON.parse(localStorage.getItem("scores")) || [];
+        const tableBody = document.querySelector("#score-table tbody");
+
+        tableBody.innerHTML = "";
+
+        scores.forEach((entry) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${entry.username}</td>
+                <td>${entry.score}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+/*
+NEW PLAYER BUTTON HANDLER
+*/
+    newPlayerButton.addEventListener("click", newPlayer);
+
+    function newPlayer() {
+        deleteCookie("username");
+        usernameInput.value = "";
+        usernameInput.classList.remove("hidden");
+        newPlayerButton.classList.add("hidden");
+    }
 });
-
-.then(data => {
-  const questions = data.results || [];
-  const correctAnswers = questions.map(q => q.correct_answer);
-  sessionStorage.setItem('currentAnswers', JSON.stringify(correctAnswers));
-  const container = document.getElementById('question-container');
-  container.innerHTML = '';
-  questions.forEach((q, i) => {
-    const qEl = createQuestionElement(q, i);
-    container.appendChild(qEl);
-  });
-  showLoading(false);
-})
