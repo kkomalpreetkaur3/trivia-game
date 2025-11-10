@@ -197,3 +197,16 @@ document.addEventListener('DOMContentLoaded', function () {
   fetchQuestions();
   displayScores();
 });
+
+.then(data => {
+  const questions = data.results || [];
+  const correctAnswers = questions.map(q => q.correct_answer);
+  sessionStorage.setItem('currentAnswers', JSON.stringify(correctAnswers));
+  const container = document.getElementById('question-container');
+  container.innerHTML = '';
+  questions.forEach((q, i) => {
+    const qEl = createQuestionElement(q, i);
+    container.appendChild(qEl);
+  });
+  showLoading(false);
+})
