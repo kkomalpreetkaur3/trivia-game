@@ -175,3 +175,25 @@ function handleFormSubmit(event) {
   displayScores();
   fetchQuestions();
 }
+
+function newPlayer() {
+  deleteCookie('trivia_username');
+  sessionStorage.removeItem('currentAnswers');
+  document.getElementById('username').value = '';
+  document.getElementById('username').classList.remove('hidden');
+  document.getElementById('username').removeAttribute('aria-hidden');
+  document.getElementById('new-player').classList.add('hidden');
+  document.getElementById('new-player').setAttribute('aria-hidden','true');
+  checkUsername();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('trivia-form');
+  const newPlayerButton = document.getElementById('new-player');
+  form.addEventListener('submit', handleFormSubmit);
+  newPlayerButton.addEventListener('click', newPlayer);
+
+  checkUsername();
+  fetchQuestions();
+  displayScores();
+});
