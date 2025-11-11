@@ -1,6 +1,6 @@
- /*
+/*
  Initializes the Trivia Game when the DOM is fully loaded.
- */
+*/
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("trivia-form");
     const questionContainer = document.getElementById("question-container");
@@ -8,14 +8,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const usernameInput = document.getElementById("username");
 
     // Initialize the game
-    checkUsername(); 
+    checkUsername();
     fetchQuestions();
     displayScores();
 
     /*
-COOKIE MANAGEMENT    
-*/
-
+    COOKIE MANAGEMENT
+    */
     function setCookie(name, value, days = 7) {
         const date = new Date();
         date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
@@ -33,32 +32,34 @@ COOKIE MANAGEMENT
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
     }
 
-/* 
-User Session Check
-*/
+    /*
+    USER SESSION CHECK
+    */
     function checkUsername() {
         const savedUsername = getCookie("username");
 
-        if (savedUsername) {
+        // Only treat cookie as valid if it's non-empty
+        if (savedUsername && savedUsername.trim() !== "") {
             usernameInput.classList.add("hidden");
             newPlayerButton.classList.remove("hidden");
-            usernameInput.value = savedUsername;
+            usernameInput.value = savedUsername; // keeps UI consistent
         } else {
             usernameInput.classList.remove("hidden");
             newPlayerButton.classList.add("hidden");
+            usernameInput.value = "";
         }
     }
 
-/*
-FETCH QUESTIONS FROM API
-*/
+    /*
+    FETCH QUESTIONS
+    */
     function fetchQuestions() {
         showLoading(true);
 
         fetch("https://opentdb.com/api.php?amount=10&type=multiple")
             .then((response) => response.json())
             .then((data) => {
-                // store correct answers in sessionStorage (privacy-safe)
+                // Store correct answers temporarily
                 const correctAnswers = data.results.map(q => q.correct_answer);
                 sessionStorage.setItem("correctAnswers", JSON.stringify(correctAnswers));
 
@@ -71,9 +72,9 @@ FETCH QUESTIONS FROM API
             });
     }
 
-/* 
-Show/Hide Loading
-*/
+    /*
+    LOADING STATE
+    */
     function showLoading(isLoading) {
         document.getElementById("loading-container").classList =
             isLoading ? "" : "hidden";
@@ -81,9 +82,9 @@ Show/Hide Loading
             isLoading ? "hidden" : "";
     }
 
-/*
-Display Questions
-*/  
+    /*
+    DISPLAY QUESTIONS
+    */
     function displayQuestions(questions) {
         questionContainer.innerHTML = "";
         questions.forEach((question, index) => {
@@ -117,10 +118,9 @@ Display Questions
             .join("");
     }
 
-/*
-FORM SUBMISSION HANDLER
-*/
-
+    /*
+    FORM SUBMISSION HANDLER
+    */
     form.addEventListener("submit", handleFormSubmit);
 
     function handleFormSubmit(event) {
@@ -128,19 +128,20 @@ FORM SUBMISSION HANDLER
 
         let username = usernameInput.value.trim();
 
-        // If user has a cookie, use it
-        if (getCookie("username")) {
-            username = getCookie("username");
+        // Use cookie username only if non-empty
+        const saved = getCookie("username");
+        if (saved && saved.trim() !== "") {
+            username = saved;
         }
 
-        // If no username provided
-        if (!username) {
+        // Require username
+        if (!username || username.trim() === "") {
             alert("Please enter your name.");
             return;
         }
 
-        // Save username in cookie if new
-        if (!getCookie("username")) {
+        // Save username to cookie if new
+        if (!getCookie("username") && username.trim() !== "") {
             setCookie("username", username, 7);
         }
 
@@ -148,13 +149,12 @@ FORM SUBMISSION HANDLER
         saveScore(username, score);
         displayScores();
 
-        // Reset game for next round
-        fetchQuestions();
+        fetchQuestions(); // Refresh questions for next game
     }
 
-/*
-SCORE CALCULATION
-*/
+    /*
+    SCORE CALCULATION
+    */
     function calculateScore() {
         let score = 0;
 
@@ -173,15 +173,17 @@ SCORE CALCULATION
 
         return score;
     }
-/*
-SCORE STORAGE AND DISPLAY
-*/
+
+    /*
+    SCORE SAVING + DISPLAYING
+    */
     function saveScore(username, score) {
         let scores = JSON.parse(localStorage.getItem("scores")) || [];
 
         scores.push({
             username: username,
             score: score,
+            date: new Date().toLocaleString()
         });
 
         localStorage.setItem("scores", JSON.stringify(scores));
@@ -198,14 +200,15 @@ SCORE STORAGE AND DISPLAY
             row.innerHTML = `
                 <td>${entry.username}</td>
                 <td>${entry.score}</td>
+                <td>${entry.date}</td>
             `;
             tableBody.appendChild(row);
         });
     }
 
-/*
-NEW PLAYER BUTTON HANDLER
-*/
+    /*
+    NEW PLAYER
+    */
     newPlayerButton.addEventListener("click", newPlayer);
 
     function newPlayer() {
