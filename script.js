@@ -59,6 +59,7 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch("https://opentdb.com/api.php?amount=10&type=multiple")
             .then((response) => response.json())
             .then((data) => {
+
                 // Store correct answers temporarily
                 const correctAnswers = data.results.map(q => q.correct_answer);
                 sessionStorage.setItem("correctAnswers", JSON.stringify(correctAnswers));
